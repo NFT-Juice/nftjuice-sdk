@@ -1,0 +1,19 @@
+{
+  "name": "sdk",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "ethers": "^6.15.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "type": "module"
+}
