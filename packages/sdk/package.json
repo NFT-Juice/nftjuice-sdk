@@ -1,14 +1,29 @@
 {
-  "name": "sdk",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "@nftjuice/sdk",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsc"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": ["nft", "defi", "ethereum", "web3", "nftjuice", "liquidity"],
+  "author": "NFTJuice",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nftjuice/nftjuice-sdk.git",
+    "directory": "packages/sdk"
+  },
+  "description": "NFTJuice SDK for interacting with NFT liquidity vault contracts",
   "dependencies": {
     "ethers": "^6.15.0"
   },
