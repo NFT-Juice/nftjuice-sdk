@@ -2,16 +2,18 @@ import styles from '../styles/NFTJuiceWidget.module.css';
 
 import React, {useState, useEffect} from 'react';
 import classNames from "classnames";
+import type {UserBalances, CollectionBalance, UserNFT} from '@nftjuice/sdk';
 
+import {NFTList} from './NFTList.js';
 import {useNFTJuice} from '../context/NFTJuiceContext.js';
 import type {BalanceDisplayProps} from '../types.js';
-import type {UserBalances, CollectionBalance} from '@nftjuice/sdk';
 
 export function BalanceDisplay({
                                    userAddress,
                                    collectionAddress,
                                    showAllCollections = true,
                                    className = '',
+                                   view = 'grid',
                                }: BalanceDisplayProps) {
     const {sdk, wallet} = useNFTJuice();
     const [balances, setBalances] = useState<UserBalances | null>(null);
@@ -99,53 +101,74 @@ export function BalanceDisplay({
 
             <div className={classNames(styles.collections, styles.mt)}>
                 {collectionsToShow.map((collection) => (
-                    <CollectionBalanceCard key={collection.collectionAddress} collection={collection}/>
+                    <CollectionBalanceCard key={collection.collectionAddress} collection={collection} view={view}/>
                 ))}
             </div>
         </div>
     );
 }
 
-function CollectionBalanceCard({collection}: { collection: any }) {
+function CollectionBalanceCard({collection, view = 'grid'}: { collection: CollectionBalance, view: 'grid' | 'list' }) {
+    const {sdk} = useNFTJuice();
+    const [vaultNFTs, setVaultNFTs] = useState<UserNFT[]>([]);
+    const [isLoadingNFTs, setIsLoadingNFTs] = useState(false);
+
+    useEffect(() => {
+        const loadVaultNFTs = async () => {
+            if (!sdk || collection.bottleNFTs.length === 0) return;
+
+            setIsLoadingNFTs(true);
+
+            try {
+                // Convert bottleNFTs to UserNFT format with metadata
+                const vaultNFTsWithMetadata: UserNFT[] = [];
+
+                for (const bottleNFT of collection.bottleNFTs) {
+                    const metadata = await sdk.fetchNFTMetadata(bottleNFT.tokenUri || '');
+                    vaultNFTsWithMetadata.push({
+                        tokenId: bottleNFT.tokenId,
+                        ...(bottleNFT.tokenUri && {tokenUri: bottleNFT.tokenUri}),
+                        ...(metadata && {metadata}),
+                        isInVault: true
+                    });
+                }
+
+                setVaultNFTs(vaultNFTsWithMetadata);
+            } catch (err) {
+                console.error('Failed to load vault NFT metadata:', err);
+            } finally {
+                setIsLoadingNFTs(false);
+            }
+        };
+
+        loadVaultNFTs();
+    }, [sdk, collection.bottleNFTs]);
+
     return (
         <div className={styles.collectionCard}>
-            <table>
-                <thead>
-                <tr>
-                    <th>Collection</th>
-                    <th>Juice Tokens</th>
-                    <th>Bottle NFT Count</th>
-                    <th>Your Bottle NFTs</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td>{collection.collectionAddress.slice(0, 6)}...{collection.collectionAddress.slice(-4)}</td>
-                    <td>{parseFloat(collection.juiceBalance).toFixed(2)} Juice</td>
-                    <td>{collection.bottleNFTs.length} NFT(s)</td>
-                    <td>
-                        {collection.bottleNFTs.length > 0 ? (
-                            <div className={styles.bottleNfts}>
-                                {collection.bottleNFTs.map((nft: any) => (
-                                    <div key={nft.tokenId}>
-                                        #{nft.tokenId}
-                                        {nft.tokenUri && (
-                                            <>
-                                                {' '}
-                                                <a className={styles.link} href={nft.tokenUri} target="_blank"
-                                                   rel="noopener noreferrer">
-                                                    View Metadata
-                                                </a>
-                                            </>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        ) : '-'}
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+            <div className={classNames(styles.info, styles.collectionCardInfo)}>
+                <h5 className={styles.sectionTitle}>
+                    Collection: {collection.collectionAddress.slice(0, 6)}...{collection.collectionAddress.slice(-4)}
+                </h5>
+
+                <p><strong>Juice Balance:</strong> {parseFloat(collection.juiceBalance).toFixed(2)} Juice</p>
+                <p><strong>NFTs in Vault:</strong> {collection.bottleNFTs.length} NFT(s)</p>
+            </div>
+
+            {collection.bottleNFTs.length > 0 && (
+                <div>
+                    <h5 className={styles.sectionTitle}>Your NFTs in Vault</h5>
+                    <NFTList
+                        nfts={vaultNFTs}
+                        view={view}
+                        layout="horizontal"
+                        showStatus={false}
+                        statusFilter="all"
+                        loading={isLoadingNFTs}
+                        emptyMessage="No NFT metadata available"
+                    />
+                </div>
+            )}
         </div>
     );
 }

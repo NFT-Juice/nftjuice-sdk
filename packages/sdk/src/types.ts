@@ -28,7 +28,26 @@ export interface CollectionBalance {
 export interface NFTBalance {
     tokenId: string;
     tokenUri?: string;
-    metadata?: any;
+    metadata?: NFTMetadata;
+}
+
+export interface NFTMetadata {
+    name?: string;
+    description?: string;
+    image?: string;
+    attributes?: NFTAttribute[];
+}
+
+export interface NFTAttribute {
+    trait_type: string;
+    value: string | number;
+}
+
+export interface UserNFT {
+    tokenId: string;
+    tokenUri?: string;
+    metadata?: NFTMetadata;
+    isInVault: boolean;
 }
 
 export interface DepositResult {
@@ -98,7 +117,7 @@ export const NETWORK_CONFIGS: Record<NetworkName, NetworkConfig> = {
         chainName: 'Ethereum Hoodi',
         rpcUrl: 'https://rpc.hoodi.ethpandaops.io',
         blockExplorerUrl: 'https://light-hoodi.beaconcha.in',
-        vaultContract: '0xA9a54319befbA34c2aF53c281ceD3c730DcA98f7',
+        vaultContract: '0xd09aE1374b054342749d7C775181C91dAeD4CaA6',
     }
 };
 

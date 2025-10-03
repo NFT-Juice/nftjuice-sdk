@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react';
-import type {NFTJuiceSDK, CollectionInfo, NetworkName, NetworkConfig} from '@nftjuice/sdk';
+import type {UserNFT, NFTJuiceSDK, CollectionInfo, NetworkName, NetworkConfig} from '@nftjuice/sdk';
 
 export interface WalletState {
     isConnected: boolean;
@@ -25,6 +25,7 @@ export interface NFTJuiceProviderProps {
 export interface NFTJuiceWidgetProps {
     collectionAddress: string;
     className?: string;
+    view?: 'grid' | 'list';
 }
 
 export interface DepositNFTProps {
@@ -33,6 +34,7 @@ export interface DepositNFTProps {
     onSuccess?: (result: any) => void;
     onError?: (error: Error) => void;
     className?: string;
+    view?: 'grid' | 'list';
 }
 
 export interface WithdrawNFTProps {
@@ -41,6 +43,7 @@ export interface WithdrawNFTProps {
     onSuccess?: (result: any) => void;
     onError?: (error: Error) => void;
     className?: string;
+    view?: 'grid' | 'list';
 }
 
 export interface BalanceDisplayProps {
@@ -48,16 +51,25 @@ export interface BalanceDisplayProps {
     collectionAddress?: string;
     showAllCollections?: boolean;
     className?: string;
+    view?: 'grid' | 'list';
 }
 
-export interface ExchangeLinksProps {
-    collectionInfo: CollectionInfo;
+export interface NFTListProps {
+    nfts: UserNFT[];
+    view?: 'grid' | 'list';
+    layout?: 'default' | 'horizontal';
+    showStatus?: boolean;
+    statusFilter?: 'all' | 'locked' | 'unlocked';
+    onSelect?: (nft: UserNFT) => void;
+    selectedTokenId?: string;
+    loading?: boolean;
+    emptyMessage?: string;
+    actionButton?: {
+        text: string;
+        onClick: (nft: UserNFT) => void;
+        disabled?: (nft: UserNFT) => boolean;
+        loading?: boolean | ((nft: UserNFT) => boolean);
+        loadingText?: string;
+    };
     className?: string;
-}
-
-export interface NFTItem {
-    tokenId: string;
-    image?: string;
-    name?: string;
-    description?: string;
 }

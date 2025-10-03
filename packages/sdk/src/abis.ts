@@ -32,6 +32,10 @@ export const BottleNFTABI = [
     "function safeMint(address to, uint256 tokenId) external",
     "function burn(uint256 tokenId) external",
     "function parentNFT() external view returns (address)",
+    "function totalSupply() external view returns (uint256)",
+    "function tokenByIndex(uint256 index) external view returns (uint256)",
+    "function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256)",
+    "function supportsInterface(bytes4 interfaceId) external view returns (bool)",
     "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
     "event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId)",
     "event ApprovalForAll(address indexed owner, address indexed operator, bool approved)"

@@ -2,8 +2,10 @@ import {ethers, EventLog} from 'ethers';
 import {NETWORK_CONFIGS} from './types.js';
 import {NFTJuiceVaultABI, BottleNFTABI, JuiceTokenABI, ERC721ABI} from './abis.js';
 import type {
+    UserNFT,
     NFTBalance,
     SDKOptions,
+    NFTMetadata,
     UserBalances,
     DepositResult,
     NetworkConfig,
@@ -208,44 +210,22 @@ export class NFTJuiceSDK {
 
             const bottleNFTs: NFTBalance[] = [];
 
-            // Since Bottle contract doesn't implement enumerable, use events to find bottle NFTs
             if (Number(bottleBalance) > 0) {
                 try {
-                    const depositFilter = this.vaultContract.filters.NFTDeposited?.(collectionAddress);
-                    if (depositFilter) {
-                        const depositEvents = await this.vaultContract.queryFilter(depositFilter, 0);
-
-                        const processedTokenIds = new Set<string>();
-
-                        for (const event of depositEvents) {
-                            if ((event as EventLog)?.args) {
-                                const tokenId = (event as EventLog)?.args?.[1];
-                                const tokenIdString = tokenId.toString();
-
-                                // Skip if we've already processed this token ID
-                                if (processedTokenIds.has(tokenIdString)) {
-                                    continue;
-                                }
-
-                                processedTokenIds.add(tokenIdString);
-
-                                try {
-                                    const bottleOwner = await (bottleContract as any).ownerOf(tokenId);
-                                    if (bottleOwner.toLowerCase() === userAddress.toLowerCase()) {
-                                        const tokenUri = await (bottleContract as any).tokenURI(tokenId);
-                                        bottleNFTs.push({
-                                            tokenId: tokenIdString,
-                                            tokenUri
-                                        });
-                                    }
-                                } catch (error) {
-                                    // Token doesn't exist or other error, skip
-                                }
-                            }
+                    for (let i = 0; i < Number(bottleBalance); i++) {
+                        try {
+                            const tokenId = await (bottleContract as any).tokenOfOwnerByIndex(userAddress, i);
+                            const tokenUri = await (bottleContract as any).tokenURI(tokenId);
+                            bottleNFTs.push({
+                                tokenId: tokenId.toString(),
+                                tokenUri
+                            });
+                        } catch (error) {
+                            console.warn(`Failed to get bottle NFT at index ${i}:`, error);
                         }
                     }
                 } catch (error) {
-                    console.warn('Failed to query deposit events:', error);
+                    console.warn('Failed to query bottle NFTs:', error);
                 }
             }
 
@@ -362,6 +342,206 @@ export class NFTJuiceSDK {
             transactionHash: tx.hash,
             gasUsed: receipt.gasUsed.toString()
         };
+    }
+
+    private async checkSupportsEnumerable(contract: ethers.Contract): Promise<boolean> {
+        try {
+            const ERC721_ENUMERABLE_INTERFACE_ID = '0x780e9d63';
+            return await (contract as any).supportsInterface(ERC721_ENUMERABLE_INTERFACE_ID);
+        } catch (error) {
+            return false;
+        }
+    }
+
+    private async getVaultedTokenIds(collectionAddress: string): Promise<Set<string>> {
+        const vaultedTokens = new Set<string>();
+
+        try {
+            const depositFilter = this.vaultContract.filters.NFTDeposited?.(collectionAddress);
+            if (depositFilter) {
+                const depositEvents = await this.vaultContract.queryFilter(depositFilter, 0);
+
+                for (const event of depositEvents) {
+                    if ((event as EventLog)?.args) {
+                        const tokenId = (event as EventLog)?.args?.[1];
+                        vaultedTokens.add(tokenId.toString());
+                    }
+                }
+            }
+
+            const withdrawFilter = this.vaultContract.filters.NFTWithdrawn?.(collectionAddress);
+            if (withdrawFilter) {
+                const withdrawEvents = await this.vaultContract.queryFilter(withdrawFilter, 0);
+
+                for (const event of withdrawEvents) {
+                    if ((event as EventLog)?.args) {
+                        const tokenId = (event as EventLog)?.args?.[1];
+                        vaultedTokens.delete(tokenId.toString());
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to query vault NFTs:', error);
+        }
+
+        return vaultedTokens;
+    }
+
+    async fetchNFTMetadata(tokenUri: string): Promise<NFTMetadata | undefined> {
+        try {
+            if (!tokenUri || tokenUri === '') {
+                return undefined;
+            }
+
+            // Handle IPFS URLs
+            let url = tokenUri;
+            if (tokenUri.startsWith('ipfs://')) {
+                url = tokenUri.replace('ipfs://', 'https://ipfs.io/ipfs/');
+            }
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                return undefined;
+            }
+
+            const metadata = await response.json();
+
+            // Handle IPFS image URLs
+            let image = metadata.image;
+            if (image && image.startsWith('ipfs://')) {
+                image = image.replace('ipfs://', 'https://ipfs.io/ipfs/');
+            }
+
+            return {
+                name: metadata.name,
+                description: metadata.description,
+                image,
+                attributes: metadata.attributes || []
+            };
+        } catch (error) {
+            console.warn('Failed to fetch NFT metadata:', error);
+            return undefined;
+        }
+    }
+
+    async getUserNFTs(userAddress: string, collectionAddress: string): Promise<UserNFT[]> {
+        const collectionInfo = await this.getCollectionInfo(collectionAddress);
+        if (!collectionInfo.isAllowed) {
+            return [];
+        }
+
+        const nftContract = new ethers.Contract(collectionAddress, ERC721ABI, this.provider);
+
+        const vaultNFTs = await this.getVaultedTokenIds(collectionAddress);
+        const userNFTs: UserNFT[] = [];
+
+        try {
+            // Check if the external NFT collection supports ERC721Enumerable
+            const supportsEnumerable = await this.checkSupportsEnumerable(nftContract);
+
+            if (supportsEnumerable) {
+                // Use optimized enumerable approach
+                const balance = await (nftContract as any).balanceOf(userAddress);
+
+                if (Number(balance) > 0) {
+                    for (let i = 0; i < Number(balance); i++) {
+                        try {
+                            const tokenId = await (nftContract as any).tokenOfOwnerByIndex(userAddress, i);
+                            const tokenIdString = tokenId.toString();
+                            const tokenUri = await (nftContract as any).tokenURI(tokenId);
+                            const metadata = await this.fetchNFTMetadata(tokenUri);
+
+                            userNFTs.push({
+                                tokenId: tokenIdString,
+                                tokenUri,
+                                ...(metadata && {metadata}),
+                                isInVault: vaultNFTs.has(tokenIdString)
+                            });
+                        } catch (error) {
+                            console.warn(`Failed to get NFT at index ${i}:`, error);
+                        }
+                    }
+                }
+            } else {
+                // Fallback to event-based approach for non-enumerable contracts
+                const transferFilter = nftContract.filters.Transfer?.(null, userAddress);
+                if (transferFilter) {
+                    const transferEvents = await nftContract.queryFilter(transferFilter, 0);
+                    const processedTokenIds = new Set<string>();
+
+                    for (const event of transferEvents) {
+                        if ((event as EventLog)?.args) {
+                            const tokenId = (event as EventLog)?.args?.[2];
+                            const tokenIdString = tokenId.toString();
+
+                            if (processedTokenIds.has(tokenIdString)) {
+                                continue;
+                            }
+                            processedTokenIds.add(tokenIdString);
+
+                            try {
+                                const currentOwner = await (nftContract as any).ownerOf(tokenId);
+                                if (currentOwner.toLowerCase() === userAddress.toLowerCase()) {
+                                    const tokenUri = await (nftContract as any).tokenURI(tokenId);
+                                    const metadata = await this.fetchNFTMetadata(tokenUri);
+
+                                    userNFTs.push({
+                                        tokenId: tokenIdString,
+                                        tokenUri,
+                                        ...(metadata && {metadata}),
+                                        isInVault: vaultNFTs.has(tokenIdString)
+                                    });
+                                }
+                            } catch (error) {
+                                console.warn(`Failed to get info for token ${tokenIdString}:`, error);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to query user NFTs:', error);
+        }
+
+        return userNFTs;
+    }
+
+    async getVaultNFTs(userAddress: string, collectionAddress: string): Promise<UserNFT[]> {
+        const collectionInfo = await this.getCollectionInfo(collectionAddress);
+        if (!collectionInfo.isAllowed) {
+            return [];
+        }
+
+        const nftContract = new ethers.Contract(collectionAddress, ERC721ABI, this.provider);
+        const bottleContract = new ethers.Contract(collectionInfo.bottleContract, BottleNFTABI, this.provider);
+        const vaultNFTs: UserNFT[] = [];
+
+        try {
+            const bottleBalance = await (bottleContract as any).balanceOf(userAddress);
+
+            if (Number(bottleBalance) > 0) {
+                for (let i = 0; i < Number(bottleBalance); i++) {
+                    try {
+                        const tokenId = await (bottleContract as any).tokenOfOwnerByIndex(userAddress, i);
+                        const tokenUri = await (nftContract as any).tokenURI(tokenId);
+                        const metadata = await this.fetchNFTMetadata(tokenUri);
+
+                        vaultNFTs.push({
+                            tokenId: tokenId.toString(),
+                            tokenUri,
+                            ...(metadata && {metadata}),
+                            isInVault: true
+                        });
+                    } catch (error) {
+                        console.warn(`Failed to get vault NFT at index ${i}:`, error);
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to query vault NFTs:', error);
+        }
+
+        return vaultNFTs;
     }
 
     get currentNetworkConfig(): NetworkConfig {

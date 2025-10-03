@@ -1,3 +1,4 @@
+export {NFTList} from './components/NFTList.js';
 export {BalanceDisplay} from './components/BalanceDisplay.js';
 export {NFTJuiceWidget} from './components/NFTJuiceWidget.js';
 
@@ -7,8 +8,11 @@ export {NFTJuiceProvider, useNFTJuice} from './context/NFTJuiceContext.js';
 export * from './types.js';
 
 export type {
-    NFTJuiceSDK,
+    UserNFT,
     NFTBalance,
+    NFTMetadata,
+    NFTJuiceSDK,
+    NFTAttribute,
     UserBalances,
     NetworkConfig,
     DepositResult,
@@ -16,5 +20,5 @@ export type {
     AllowNFTResult,
     CollectionInfo,
     CollectionBalance,
-    TransactionOptions
+    TransactionOptions,
 } from '@nftjuice/sdk';

@@ -15,6 +15,7 @@ import type {NFTJuiceWidgetProps} from '../types.js';
 export function NFTJuiceWidget({
                                    collectionAddress,
                                    className = '',
+                                   view = 'grid'
                                }: NFTJuiceWidgetProps) {
     const {sdk, wallet, connectWallet, switchToNetwork} = useNFTJuice();
     const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw' | 'balances' | 'exchange'>('deposit');
@@ -142,6 +143,7 @@ export function NFTJuiceWidget({
                                 collectionAddress={collectionAddress}
                                 onSuccess={handleTransactionSuccess}
                                 onError={handleTransactionError}
+                                view={view}
                             />
                         )}
 
@@ -150,6 +152,7 @@ export function NFTJuiceWidget({
                                 collectionAddress={collectionAddress}
                                 onSuccess={handleTransactionSuccess}
                                 onError={handleTransactionError}
+                                view={view}
                             />
                         )}
 
@@ -157,6 +160,7 @@ export function NFTJuiceWidget({
                             <BalanceDisplay
                                 collectionAddress={collectionAddress}
                                 showAllCollections={false}
+                                view={view}
                             />
                         )}
                     </div>
