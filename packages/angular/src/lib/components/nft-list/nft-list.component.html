@@ -1,0 +1,94 @@
+<div [class]="'nftListContainer ' + className">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="nftListLoading">
+        <div class="nftListSpinner"></div>
+        <p>Loading NFTs...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && filteredNFTs.length === 0" class="nftListEmpty">
+        <p>{{ emptyMessage }}</p>
+    </div>
+
+    <!-- Horizontal Layout -->
+    <div *ngIf="!loading && filteredNFTs.length > 0 && layout === 'horizontal'" class="horizontalScrollContainer">
+        <div class="horizontalNftGrid">
+            <div *ngFor="let nft of filteredNFTs; trackBy: trackByTokenId"
+                 [class]="'nftCard gridView horizontalNftCard' +
+                         (isSelected(nft) ? ' selected' : '') +
+                         (nft.isInVault ? ' locked' : ' unlocked') +
+                         (selectNft.observers.length > 0 ? ' clickable' : '')"
+                 (click)="onNftClick(nft)">
+                <div class="imageContainer">
+                    <img [src]="getImageUrl(nft)"
+                         [alt]="nft.metadata?.name || 'NFT #' + nft.tokenId"
+                         class="nftImage"
+                         (error)="onImageError($event)">
+                    <div *ngIf="showStatus"
+                         [class]="'statusBadge' + (nft.isInVault ? ' locked' : ' unlocked')">
+                        {{ nft.isInVault ? 'Locked' : 'Unlocked' }}
+                    </div>
+                </div>
+
+                <div class="nftInfo">
+                    <h4 class="nftName">{{ nft.metadata?.name || '#' + nft.tokenId }}</h4>
+                    <p class="tokenId">Token ID: {{ nft.tokenId }}</p>
+                    <p *ngIf="nft.metadata?.description" class="description">
+                        {{ truncateDescription(nft.metadata.description) }}
+                    </p>
+                </div>
+
+                <div *ngIf="actionButton" class="actionButtonContainer">
+                    <button (click)="onActionClick($event, nft)"
+                            [disabled]="isActionDisabled(nft) || isActionLoading(nft)"
+                            [class]="'actionButton' +
+                                    (isActionDisabled(nft) ? ' disabled' : '') +
+                                    (isActionLoading(nft) ? ' loading' : '')">
+                        {{ isActionLoading(nft) ? (actionButton.loadingText || 'Loading...') : actionButton.text }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Default Grid/List Layout -->
+    <div *ngIf="!loading && filteredNFTs.length > 0 && layout === 'default'"
+         [class]="'nftGrid' + (view === 'list' ? ' listLayout' : ' gridLayout')">
+        <div *ngFor="let nft of filteredNFTs; trackBy: trackByTokenId"
+             [class]="'nftCard' +
+                     (view === 'list' ? ' listView' : ' gridView') +
+                     (isSelected(nft) ? ' selected' : '') +
+                     (nft.isInVault ? ' locked' : ' unlocked') +
+                     (selectNft.observers.length > 0 ? ' clickable' : '')"
+             (click)="onNftClick(nft)">
+            <div class="imageContainer">
+                <img [src]="getImageUrl(nft)"
+                     [alt]="nft.metadata?.name || 'NFT #' + nft.tokenId"
+                     class="nftImage"
+                     (error)="onImageError($event)">
+                <div *ngIf="showStatus"
+                     [class]="'statusBadge' + (nft.isInVault ? ' locked' : ' unlocked')">
+                    {{ nft.isInVault ? 'Locked' : 'Unlocked' }}
+                </div>
+            </div>
+
+            <div class="nftInfo">
+                <h4 class="nftName">{{ nft.metadata?.name || '#' + nft.tokenId }}</h4>
+                <p class="tokenId">Token ID: {{ nft.tokenId }}</p>
+                <p *ngIf="nft.metadata?.description" class="description">
+                    {{ truncateDescription(nft.metadata.description) }}
+                </p>
+            </div>
+
+            <div *ngIf="actionButton" class="actionButtonContainer">
+                <button (click)="onActionClick($event, nft)"
+                        [disabled]="isActionDisabled(nft) || isActionLoading(nft)"
+                        [class]="'actionButton' +
+                                (isActionDisabled(nft) ? ' disabled' : '') +
+                                (isActionLoading(nft) ? ' loading' : '')">
+                    {{ isActionLoading(nft) ? (actionButton.loadingText || 'Loading...') : actionButton.text }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

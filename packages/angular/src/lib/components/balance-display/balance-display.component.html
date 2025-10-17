@@ -1,0 +1,49 @@
+<div *ngIf="!addressToQuery" [class]="'container ' + className">
+    <div class="errorMessage">No wallet address available</div>
+</div>
+
+<div *ngIf="isLoading && addressToQuery" [class]="'container ' + className">
+    <div class="loadingMessage">Loading balances...</div>
+</div>
+
+<div *ngIf="errorMessage && addressToQuery" [class]="'container ' + className">
+    <div class="errorMessage">{{ errorMessage }}</div>
+</div>
+
+<div *ngIf="!isLoading && !errorMessage && balances && collectionsToShow.length === 0 && addressToQuery" [class]="'container ' + className">
+    <h3 class="sectionTitle">Your NFTJuice Balances</h3>
+    <div class="emptyMessage">No balances found for the specified collection(s).</div>
+</div>
+
+<div *ngIf="!isLoading && !errorMessage && balances && collectionsToShow.length > 0 && addressToQuery" [class]="'container ' + className">
+    <h3 class="sectionTitle">Your NFTJuice Balances</h3>
+    <div class="sectionDescription">
+        Address: {{ formatAddress(addressToQuery) }}
+    </div>
+
+    <div class="collections mt">
+        <div *ngFor="let collection of collectionsToShow" class="collectionCard">
+            <div class="collectionCardInfo">
+                <h4 class="sectionTitle">
+                    {{ formatAddress(collection.collectionAddress) }}
+                </h4>
+                <p><strong>Juice Balance:</strong> {{ formatBalance(collection.juiceBalance) }} Juice</p>
+                <p><strong>Bottle NFTs:</strong> {{ collection.bottleNFTs.length }}</p>
+            </div>
+
+            <div *ngIf="collection.bottleNFTs.length === 0" class="emptyMessage mt">
+                No Bottle NFTs
+            </div>
+
+            <div *ngIf="collection.bottleNFTs.length > 0">
+                <nftjuice-nft-list
+                    [nfts]="getVaultNFTs(collection)"
+                    [view]="view"
+                    [layout]="'horizontal'"
+                    [loading]="isLoadingNFTs(collection)"
+                    [emptyMessage]="'No NFT metadata available'">
+                </nftjuice-nft-list>
+            </div>
+        </div>
+    </div>
+</div>

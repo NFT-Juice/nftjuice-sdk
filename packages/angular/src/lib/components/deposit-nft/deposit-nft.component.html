@@ -1,0 +1,37 @@
+<div *ngIf="!isConnected" [class]="'container ' + className">
+    <div class="errorMessage">Please connect your wallet to deposit NFTs</div>
+</div>
+
+<div *ngIf="isConnected" [class]="'container ' + className">
+    <h3 class="sectionTitle">Deposit NFT</h3>
+
+    <div *ngIf="errorMessage" class="errorMessage">{{ errorMessage }}</div>
+
+    <div class="mt">
+        <nftjuice-nft-list
+            [nfts]="userNFTs"
+            [view]="view"
+            statusFilter="unlocked"
+            [selectedTokenId]="selectedNFT?.tokenId"
+            [loading]="isLoadingNFTs"
+            emptyMessage="No available NFTs to deposit"
+            [actionButton]="{
+                text: 'Deposit',
+                onClick: handleDepositNFT.bind(this),
+                disabled: isActionDisabled,
+                loading: isActionLoading,
+                loadingText: 'Depositing...'
+            }"
+            (selectNft)="selectedNFT = $event">
+        </nftjuice-nft-list>
+    </div>
+
+    <div class="info mt">
+        <p>Depositing your NFT will:</p>
+        <ul>
+            <li>Transfer your NFT to the vault</li>
+            <li>Mint you a Bottle NFT as a receipt</li>
+            <li>Receive 100 Juice tokens (minus fees)</li>
+        </ul>
+    </div>
+</div>

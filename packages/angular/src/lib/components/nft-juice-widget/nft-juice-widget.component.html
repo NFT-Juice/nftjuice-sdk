@@ -1,0 +1,95 @@
+<div [class]="'widget ' + className">
+    <div class="header">
+        <h2 class="headerTitle">NFTJuice</h2>
+        <div class="collectionInfo">
+            Collection: {{ formattedCollectionAddress }}
+        </div>
+    </div>
+
+    <!-- Connect Wallet Section -->
+    <div *ngIf="!wallet.isConnected" class="connectSection">
+        <div class="message">
+            <h3 class="sectionTitle">Connect Your Wallet</h3>
+            <p class="sectionDescription">Connect your wallet to start using NFTJuice with this collection.</p>
+        </div>
+        <button (click)="connectWallet()" class="button">
+            Connect Wallet
+        </button>
+    </div>
+
+    <!-- Wrong Network Section -->
+    <div *ngIf="wallet.isConnected && isWrongNetwork" class="networkSection">
+        <div class="message">
+            <h3 class="sectionTitle">Wrong Network</h3>
+            <p class="sectionDescription">
+                Please switch to <strong>{{ networkNameToSwitch }}</strong> to use this widget.
+            </p>
+        </div>
+        <button (click)="switchToNetwork()" class="button">
+            Switch to {{ networkNameToSwitch }}
+        </button>
+    </div>
+
+    <!-- Loading Section -->
+    <div *ngIf="wallet.isConnected && !isWrongNetwork && isLoading" class="loadingSection">
+        <div class="loadingMessage">Loading collection information...</div>
+    </div>
+
+    <!-- Error Section -->
+    <div *ngIf="wallet.isConnected && !isWrongNetwork && !isLoading && errorMessage" class="errorSection">
+        <div class="errorMessage">{{ errorMessage }}</div>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="wallet.isConnected && !isWrongNetwork && !isLoading && !errorMessage && collectionInfo?.isAllowed">
+        <div class="tabs">
+            <button
+                [class]="'tab' + (activeTab === 'deposit' ? ' active' : '')"
+                (click)="setActiveTab('deposit')">
+                Deposit
+            </button>
+            <button
+                [class]="'tab' + (activeTab === 'withdraw' ? ' active' : '')"
+                (click)="setActiveTab('withdraw')">
+                Withdraw
+            </button>
+            <button
+                [class]="'tab' + (activeTab === 'balances' ? ' active' : '')"
+                (click)="setActiveTab('balances')">
+                Balances
+            </button>
+        </div>
+
+        <div class="content">
+            <nftjuice-deposit-nft
+                *ngIf="activeTab === 'deposit'"
+                [collectionAddress]="collectionAddress"
+                [view]="view"
+                (success)="handleTransactionSuccess($event)"
+                (error)="handleTransactionError($event)">
+            </nftjuice-deposit-nft>
+
+            <nftjuice-withdraw-nft
+                *ngIf="activeTab === 'withdraw'"
+                [collectionAddress]="collectionAddress"
+                [view]="view"
+                (success)="handleTransactionSuccess($event)"
+                (error)="handleTransactionError($event)">
+            </nftjuice-withdraw-nft>
+
+            <nftjuice-balance-display
+                *ngIf="activeTab === 'balances'"
+                [collectionAddress]="collectionAddress"
+                [showAllCollections]="false"
+                [view]="view">
+            </nftjuice-balance-display>
+        </div>
+    </div>
+
+    <!-- Collection Not Available -->
+    <div *ngIf="wallet.isConnected && !isWrongNetwork && !isLoading && collectionInfo && !collectionInfo.isAllowed" class="errorSection">
+        <div class="errorMessage">
+            This collection is not available in the NFTJuice system.
+        </div>
+    </div>
+</div>

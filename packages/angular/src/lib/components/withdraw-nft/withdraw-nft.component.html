@@ -1,0 +1,56 @@
+<div *ngIf="!isConnected" [class]="'container ' + className">
+    <div class="errorMessage">Please connect your wallet to withdraw NFTs</div>
+</div>
+
+<div *ngIf="isConnected && (isLoadingNFTs || collectionInfo === null)" [class]="'container ' + className">
+    <div class="loadingMessage">Loading collection info...</div>
+</div>
+
+<div *ngIf="isConnected && !isLoadingNFTs && collectionInfo && !collectionInfo.isAllowed" [class]="'container ' + className">
+    <div class="errorMessage">This collection is not whitelisted</div>
+</div>
+
+<div *ngIf="isConnected && !isLoadingNFTs && collectionInfo?.isAllowed" [class]="'container ' + className">
+    <h3 class="sectionTitle">Withdraw NFT</h3>
+
+    <div class="info">
+        <div class="balance-item">
+            <p>Your Juice Balance: <strong>{{ formattedJuiceBalance }}</strong></p>
+        </div>
+        <div class="warning mt">⚠️ Required: 100 Juice tokens</div>
+    </div>
+
+    <div *ngIf="errorMessage" class="errorMessage">{{ errorMessage }}</div>
+
+    <div class="mt">
+        <nftjuice-nft-list
+            [nfts]="vaultNFTs"
+            [view]="view"
+            statusFilter="locked"
+            [selectedTokenId]="selectedNFT?.tokenId"
+            [loading]="isLoadingNFTs"
+            emptyMessage="No NFTs in vault to withdraw"
+            [actionButton]="{
+                text: 'Withdraw',
+                onClick: handleWithdrawNFT.bind(this),
+                disabled: isActionDisabled,
+                loading: isActionLoading,
+                loadingText: 'Withdrawing...'
+            }"
+            (selectNft)="selectedNFT = $event">
+        </nftjuice-nft-list>
+    </div>
+
+    <div class="info mt">
+        <p>Withdrawing your NFT will:</p>
+        <ul>
+            <li>Burn 100 Juice tokens from your balance</li>
+            <li>Transfer your Bottle NFT to the vault</li>
+            <li>Return your original NFT to your wallet</li>
+        </ul>
+        <div *ngIf="!hasEnoughJuice" class="warning mt">
+            ⚠️ You need to acquire more Juice tokens to withdraw.
+            You can buy them on Uniswap or deposit more NFTs.
+        </div>
+    </div>
+</div>
