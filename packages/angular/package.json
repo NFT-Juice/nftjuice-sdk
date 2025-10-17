@@ -1,6 +1,6 @@
 {
   "name": "@nftjuice/angular",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Angular components and services for NFTJuice SDK",
   "keywords": [
     "nft",
@@ -41,7 +41,7 @@
     "@angular/compiler": "^19.1.5",
     "@angular/compiler-cli": "^19.1.5",
     "@angular/core": "^19.1.5",
-    "@nftjuice/sdk": "^1.0.0",
+    "@nftjuice/sdk": "^1.0.1",
     "ethers": "^6.15.0",
     "ng-packagr": "^19.1.1",
     "rxjs": "^7.8.1",
